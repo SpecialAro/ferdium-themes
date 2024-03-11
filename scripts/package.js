@@ -8,6 +8,7 @@ const fs = require("fs-extra");
 const path = require("path");
 const sizeOf = require("image-size");
 const simpleGit = require("simple-git");
+const semver = require("semver");
 
 const pkgVersionChangedMatcher = /\n\+.*version.*/;
 
@@ -151,6 +152,12 @@ const compress = (src, dest) =>
     //     "The theme's theme.json contains no 'config' object. This field should contain a configuration for your service."
     //   );
     // }
+
+    if (semver.valid(config.version) === null) {
+      configErrors.push(
+        `The theme's theme.json contains an invalid version number: ${config.version}`
+      );
+    }
 
     const topLevelKeys = Object.keys(config);
     for (const key of topLevelKeys) {
