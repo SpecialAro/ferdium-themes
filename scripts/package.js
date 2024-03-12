@@ -14,7 +14,7 @@ const pkgVersionChangedMatcher = /\n\+.*version.*/;
 
 // Publicly availible link to this repository's theme folder
 // Used for generating public icon URLs
-const repo = "https://cdn.jsdelivr.net/gh/ferdium/ferdium-themes/themes/";
+const repo = "https://cdn.jsdelivr.net/gh/specialaro/ferdium-themes/themes/";
 
 // Helper: Compress src folder into dest file
 const compress = (src, dest) =>
