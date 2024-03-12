@@ -97,17 +97,6 @@ const compress = (src, dest) =>
     //   continue;
     // }
 
-    // Check that user.js does not exist
-    const userJs = path.join(themeSrc, "user.js");
-    // eslint-disable-next-line no-await-in-loop
-    if (await fs.pathExists(userJs)) {
-      console.log(
-        `⚠️ Couldn't package "${theme}": Folder contains a "user.js".`
-      );
-      unsuccessful += 1;
-      continue;
-    }
-
     // Read theme.json
     const themeJson = path.join(themeSrc, "theme.json");
     // eslint-disable-next-line no-await-in-loop
@@ -146,6 +135,14 @@ const compress = (src, dest) =>
       configErrors.push(
         "The theme's theme.json contains no 'version' field. This field should contain the a semver-compatible version number for your theme (e.g. '1.0.0')"
       );
+    }
+
+    if (!config.preview) {
+      if (!(await fs.pathExists(path.join(themeSrc, "preview.png")))) {
+        configErrors.push(
+          "The theme's theme.json contains no 'preview' field and no 'preview.png' file. This field should contain a URL to a preview image for your theme or you can add a 'preview.png' file to the theme folder and delete this field."
+        );
+      }
     }
     // if (!config.config || typeof config.config !== "object") {
     //   configErrors.push(
