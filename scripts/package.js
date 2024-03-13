@@ -47,11 +47,14 @@ const compress = (src, dest) =>
   const themesFolder = path.join(repoRoot, "themes");
   const outputFolder = path.join(repoRoot, "archives");
   const allJson = path.join(repoRoot, "all.json");
+  const tempFolder = path.join(repoRoot, "temp");
   let themeList = [];
   let unsuccessful = 0;
 
   await fs.ensureDir(outputFolder);
   await fs.emptyDir(outputFolder);
+  await fs.ensureDir(tempFolder);
+  await fs.emptyDir(tempFolder);
   await fs.remove(allJson);
 
   const git = await simpleGit(repoRoot);
@@ -278,8 +281,31 @@ const compress = (src, dest) =>
     //   unsuccessful += 1;
     // }
 
+    // Copy theme to temp folder before packaging
+    await fs.copy(themeSrc, path.join(tempFolder, config.id));
+
+    // Add preview.png to theme.json if it doesn't exist
+    if (!config.preview) {
+      const themeTweak = await fs.readJson(
+        path.join(tempFolder, config.id, "theme.json")
+      );
+      themeTweak.preview = `${repo}${config.id}/preview.png`;
+
+      await fs.writeJson(
+        path.join(tempFolder, config.id, "theme.json"),
+        themeTweak,
+        {
+          spaces: 2,
+          EOL: "\n",
+        }
+      );
+    }
+
     // Package to .tar.gz
-    compress(themeSrc, path.join(outputFolder, `${config.id}.tar.gz`));
+    await compress(
+      path.join(tempFolder, config.id),
+      path.join(outputFolder, `${config.id}.tar.gz`)
+    );
 
     // Add theme to all.json
     const packageInfo = {
@@ -309,6 +335,10 @@ const compress = (src, dest) =>
   console.log(
     `✅ Successfully packaged and added ${themeList.length} themes (${unsuccessful} unsuccessful themes)`
   );
+
+  // Clean up
+  await fs.remove(tempFolder);
+
 
   if (unsuccessful > 0) {
     throw new Error(`One or more themes couldn't be packaged.`);
