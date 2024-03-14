@@ -1,14 +1,14 @@
 /* eslint-disable no-console */
 
 /**
- * Create a new recipe for your service
+ * Create a new theme for your service
  */
-const fs = require('fs-extra');
-const path = require('path');
-const open = require('open');
+const fs = require("fs-extra");
+const path = require("path");
+const child_process = require('child_process');
 
 if (process.argv.length < 3) {
-  console.log(`Usage: pnpm create <Recipe name> [Folder name]
+  console.log(`Usage: pnpm create <Theme name> [Folder name]
 For example:
 pnpm create WhatsApp
 pnpm create "Google Hangouts"
@@ -16,77 +16,95 @@ You can set "Folder name" to "FerdiumDev" to use Ferdium's development instance 
 
 pnpm create WhatsApp FerdiumDev
 `);
-  throw new Error('Please provide the correct number of args!');
+  throw new Error("Please provide the correct number of args!");
 }
 
-const recipeName = process.argv[2];
-const recipe = recipeName.toLowerCase().replaceAll(/\s/g, '-');
-const folderName = process.argv[3] || 'Ferdium';
-const filesThatNeedTextReplace = ['package.json', 'index.js', 'webview.js'];
+const themeName = process.argv[2];
+const theme = themeName.toLowerCase().replaceAll(/\s/g, "-");
+const folderName = process.argv[3] || "Ferdium";
+const filesThatNeedTextReplace = ["theme.json"];
 
-const toPascalCase = str => {
+const toPascalCase = (str) => {
   const words = str
-    .replaceAll(/[^a-z]/g, '')
+    .replaceAll(/[^a-z]/g, "")
     .split(/\W/)
-    .map(word => {
+    .map((word) => {
       if (word.length === 0) {
         return word;
       }
       // Capitalize the first letter, lowercase the rest
       return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     });
-  return words.join('');
+  return words.join("");
 };
-const pascalCasedName = toPascalCase(recipe); // PascalCased recipe ID only containing a-z, for usage as the JavaScript class name
+const pascalCasedName = toPascalCase(theme); // PascalCased theme ID only containing a-z, for usage as the JavaScript class name
+
+function dirOpen(dirPath) {
+  let command = "";
+  switch (process.platform) {
+    case "darwin":
+      command = "open";
+      break;
+    case "win32":
+      command = "explorer";
+      break;
+    default:
+      command = "xdg-open";
+      break;
+  }
+  // console.log('child_process.execSync', `${command} "${dirPath}"`);
+  child_process.exec(`${command} "${dirPath}"`);
+  
+}
 
 (async () => {
   // Folder paths
   const userData =
     process.env.APPDATA ||
-    (process.platform === 'darwin'
+    (process.platform === "darwin"
       ? `${process.env.HOME}/Library/Application Support`
       : `${process.env.HOME}/.config`);
-  const recipesFolder = path.join(userData, folderName, 'recipes');
-  const devRecipeFolder = path.join(recipesFolder, 'dev');
-  const newRecipeFolder = path.join(devRecipeFolder, recipe);
-  const sampleRecipe = path.join(__dirname, 'sample_recipe');
+  const themesFolder = path.join(userData, folderName, "config", "themes");
+  const devThemeFolder = path.join(themesFolder, "dev");
+  const newThemeFolder = path.join(devThemeFolder, theme);
+  const sampleTheme = path.join(__dirname, "sample_theme");
 
-  // Make sure dev recipe folder exists
-  if (!fs.existsSync(recipesFolder)) {
+  // Make sure dev theme folder exists
+  if (!fs.existsSync(themesFolder)) {
     console.log(
-      `Couldn't find your recipe folder (${recipesFolder}). Is Ferdium installed?`,
+      `Couldn't find your theme folder (${themesFolder}). Is Ferdium installed?`
     );
     return;
   }
-  fs.ensureDirSync(devRecipeFolder);
+  fs.ensureDirSync(devThemeFolder);
 
-  if (fs.existsSync(newRecipeFolder)) {
-    console.log('⚠️ Recipe already exists');
+  if (fs.existsSync(newThemeFolder)) {
+    console.log("⚠️ Theme already exists");
     return;
   }
 
-  console.log('[Info] Passed pre-checks');
+  console.log("[Info] Passed pre-checks");
 
-  // Copy sample recipe to recipe folder
-  fs.copySync(sampleRecipe, newRecipeFolder);
-  console.log('[Info] Copied recipe');
+  // Copy sample theme to theme folder
+  fs.copySync(sampleTheme, newThemeFolder);
+  console.log("[Info] Copied theme");
 
-  // Replace placeholders with the recipe-specific values
+  // Replace placeholders with the theme-specific values
   for (const file of filesThatNeedTextReplace) {
-    const filePath = path.join(newRecipeFolder, file);
-    let contents = fs.readFileSync(filePath, 'utf8');
-    contents = contents.replaceAll('SERVICE', recipe);
-    contents = contents.replaceAll('SNAME', recipeName);
-    contents = contents.replaceAll('SPASCAL', pascalCasedName);
+    const filePath = path.join(newThemeFolder, file);
+    let contents = fs.readFileSync(filePath, "utf8");
+    contents = contents.replaceAll("THEME", theme);
+    contents = contents.replaceAll("SNAME", themeName);
+    contents = contents.replaceAll("SPASCAL", pascalCasedName);
     fs.writeFileSync(filePath, contents);
   }
-  console.log('[Info] Prepared new recipe');
+  console.log("[Info] Prepared new theme");
 
-  open(newRecipeFolder);
-  console.log(`✅ Successfully created your recipe.
+  dirOpen(newThemeFolder);
+  console.log(`✅ Successfully created your theme.
 
 What's next?
-- Make sure you restart Ferdium in order for the recipe to show up
-- Customise "webview.js", "package.json" and "icon.svg" (see https://github.com/ferdium/ferdium-recipes/blob/main/docs/integration.md#recipe-structure)
-- Publish your recipe (see https://github.com/ferdium/ferdium-recipes/blob/main/docs/integration.md#publishing)`);
+- Make sure you open the Themes Marketplace again in Ferdium in order for the theme to show up
+- Customise "theme.json", "custom.css" and "preview.png" (see https://github.com/ferdium/ferdium-themes/blob/main/docs/integration.md#theme-structure)
+- Publish your theme (see https://github.com/ferdium/ferdium-themes/blob/main/docs/integration.md#publishing)`);
 })();
